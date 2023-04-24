@@ -1,0 +1,11 @@
+{
+  "BrightnessThrehold": 127,
+  "crackBrightnessThrehold": 205,
+  "filePathOrigin": "./bh-3 DICOM-20230421T075124Z-001/bh-3 DICOM/bh_3_16/13170000",
+  "filePath": "./bh-3 DICOM-20230421T075124Z-001/BmpOut/16/00",
+  "filePathReverseOut": "./bh-3 DICOM-20230421T075124Z-001/bmpReversseOut",
+  "imgTextFont": "",
+  "imgTextFontScale": 1,
+  "imgTextColor": [255, 255, 0],
+  "imgTextThickness": 2
+}
