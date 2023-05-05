@@ -1,8 +1,13 @@
-# ignore environment and pictures
+# ignore environment, pictures and projectDEMO
 venv
 bh-3 DICOM-20230421T075124Z-001
 __pycache__
+projectDEMO
+
 
 # ignore the zip file
 bh-3DICOM-20230421T075124Z-001.zip
 bh-3DICOM-20230421T075124Z-002.zip
+
+# ignore dicomInfo
+dsInfo.txt
