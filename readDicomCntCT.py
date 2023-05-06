@@ -1,9 +1,17 @@
 from pydicom import dcmread
 import cv2 as cv
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 
+import plotly.express as px
+from plotly.subplots import make_subplots
+import plotly.graph_objects as go
+import cufflinks
+
 from config import config
+
+shrinkToCenter = 2
 
 
 def checkInCircle(cx, cy, r, idxX, idxY) -> bool:
@@ -23,19 +31,6 @@ def show_brightness(event, x, y, flags, userdata):
         print(f"x: {x}, y: {y}, color: {Hu[y,x]}")
 
 
-# with open(config['filePathOrigin'] + '/23966887', 'rb') as f:
-#     ds = dcmread(f)
-#     with open('dsInfo.txt', 'w') as tf:
-#         tf.write(str(ds))
-#     # print(ds.PhotometricInterpretation)
-#     # arr = ds.pixel_array
-#     # arr[arr > 100] = 300
-#     # ds.PixelData = arr.tobytes()
-#     # print(ds.pixel_array)
-#     # print(ds.PhotometricInterpretation)
-#     plt.imshow(ds.pixel_array)
-#     plt.show()
-
 with open('./bh-3 DICOM-20230421T075124Z-001/IM-0001-0001.dcm', 'rb') as f:
     ds = dcmread(f)
     print("正常的或被压缩的：" + ds.file_meta.TransferSyntaxUID.name)
@@ -49,8 +44,7 @@ with open('./bh-3 DICOM-20230421T075124Z-001/IM-0001-0001.dcm', 'rb') as f:
     px_arr = np.array(ds.pixel_array)
     # CT value
     Hu = px_arr * ds.RescaleSlope + ds.RescaleIntercept
-    CTG = np.max(px_arr)
-    afterW_Hu = (CTG - Hu) / CTG
+
     # # rescale original 16 bit image to 8 bit values [0,255]
     x0 = np.min(px_arr)
     x1 = np.max(px_arr)
@@ -69,36 +63,59 @@ with open('./bh-3 DICOM-20230421T075124Z-001/IM-0001-0001.dcm', 'rb') as f:
     imgCanny = cv.Canny(img, 30, 150)
     circles = cv.HoughCircles(imgCanny,
                               cv.HOUGH_GRADIENT,
-                              1.5,
+                              2,
                               20,
                               param1=70,
-                              param2=70,
+                              param2=90,
                               minRadius=85,
-                              maxRadius=95)
+                              maxRadius=100)
 
     if circles is not None:
         circles = np.uint16(np.around(circles))
         for index, i in enumerate(circles[0, :]):
             # draw the outer circle
-            cv.circle(cimg, (i[0], i[1]), i[2] - 2, (0, 0, 255), 2)
+            cv.circle(cimg, (i[0], i[1]), i[2] - shrinkToCenter, (0, 0, 255),
+                      2)
             # draw the center of the circle
             cv.circle(cimg, (i[0], i[1]), 2, (0, 0, 255), 3)
 
-            blackCnt = 0
-            pixelCnt = 0
+            numOfVoxel = 0
+            circleHuList = np.array([])
+            circleVwList = np.array([])
             for idx, j in np.ndenumerate(Hu):
-                if (checkInCircle(i[0], i[1], i[2] - 2, idx[1], idx[0])):
-                    pixelCnt += 1
-                    # CT < 0 is for fiuld
-                    if (j < 0):
-                        # check is inside the circle
-                        blackCnt += 1
-            cv.putText(cimg, f'{blackCnt / pixelCnt}', (0, 45 + 45 * index),
-                       cv.FONT_HERSHEY_SIMPLEX, config['imgTextFontScale'],
-                       config['imgTextColor'], config['imgTextThickness'],
-                       cv.LINE_AA)
+                # check is inside the circle
+                if (checkInCircle(i[0], i[1], i[2] - shrinkToCenter, idx[1],
+                                  idx[0])):
+                    numOfVoxel += 1
+                    circleHuList = np.append(circleHuList, Hu[idx[0], idx[1]])
 
+            CTG = np.max(circleHuList)
+            circleVwList = (CTG - circleHuList) / CTG
+            cv.putText(cimg, f'{ circleVwList.sum() / numOfVoxel }',
+                       (0, 45 + 45 * index), cv.FONT_HERSHEY_SIMPLEX,
+                       config['imgTextFontScale'], config['imgTextColor'],
+                       config['imgTextThickness'], cv.LINE_AA)
+    # matplotlib view
+    # fig, axes = plt.subplots(2)
+    # counts, bins = np.histogram(circleHuList, 100)
+    # axes[0].hist(bins[:-1], bins, weights=counts)
+
+    # counts, bins = np.histogram(circleVwList, 100)
+    # axes[1].hist(bins[:-1], bins, weights=counts)\
+
+    # plt.show()
+
+    # plotly view
+    fig = make_subplots(2)
+    fig.append_trace(go.Histogram(x=circleHuList, name='Hu'), row=1, col=1)
+
+    fig.append_trace(go.Histogram(x=circleVwList, name='Vw'), row=2, col=1)
+
+    fig.show()
+
+    # image process
     cv.imshow('detected circles', cimg)
-    cv.setMouseCallback('detected circles', show_brightness)
+    # cv.imshow('canny', imgCanny)
+    # cv.setMouseCallback('detected circles', show_brightness)
     cv.waitKey(0)
     cv.destroyAllWindows()
