@@ -70,8 +70,8 @@ for i in range(1, 21):
                                   20,
                                   param1=70,
                                   param2=90,
-                                  minRadius=85,
-                                  maxRadius=100)
+                                  minRadius=110,
+                                  maxRadius=130)
 
         if circles is not None:
             circles = np.uint16(np.around(circles))
