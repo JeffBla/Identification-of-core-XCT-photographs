@@ -73,6 +73,24 @@ for i in range(1, 21):
                                   minRadius=110,
                                   maxRadius=130)
 
+        # area finding
+        # Threshold the image to create a binary image
+        ret, thresh = cv.threshold(img, 127, 255, cv.THRESH_BINARY)
+        contours, hierarchy = cv.findContours(thresh, 2, 1)
+
+        cnt = contours
+        big_contour = []
+        max = 0
+        for i in cnt:
+            area = cv.contourArea(
+                i)  #--- find the contour having biggest area ---
+            if (area > max):
+                max = area
+                big_contour = i
+
+        cv.drawContours(cimg, big_contour, -1, (0, 255, 0), 2)
+
+        # Inside circles
         if circles is not None:
             circles = np.uint16(np.around(circles))
             for index, i in enumerate(circles[0, :]):
@@ -86,9 +104,12 @@ for i in range(1, 21):
                 circleHuList = np.array([])
                 circleVwList = np.array([])
                 for idx, j in np.ndenumerate(Hu):
-                    # check is inside the circle
+                    # check is inside the circle and coutour?
+                    # pointPolygonTest -> positive (inside), negative (outside), or zero (on an edge)
                     if (checkInCircle(i[0], i[1], i[2] - shrinkToCenter,
-                                      idx[1], idx[0])):
+                                      idx[1], idx[0]) and
+                        (cv.pointPolygonTest(big_contour,
+                                             (idx[1], idx[0]), False) > 0)):
                         numOfVoxel += 1
                         circleHuList = np.append(circleHuList, Hu[idx[0],
                                                                   idx[1]])
