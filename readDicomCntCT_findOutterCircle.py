@@ -31,6 +31,9 @@ def show_brightness(event, x, y, flags, userdata):
         print(f"x: {x}, y: {y}, color: {Hu[y,x]}")
 
 
+# 2.5吋
+# now -> 3吋 container outter 89mm diameter, inner  77 mm
+
 for i in range(1, 21):
     with open(
             f'./bh-3 DICOM-20230421T075124Z-001/bh3 15 dicom_20/IM-0001-{i:04d}.dcm',
@@ -142,6 +145,6 @@ for i in range(1, 21):
         # image process
         cv.imshow('detected circles', cimg)
         # cv.imshow('canny', imgCanny)
-        # cv.setMouseCallback('detected circles', show_brightness)
+        cv.setMouseCallback('detected circles', show_brightness)
         cv.waitKey(0)
         cv.destroyAllWindows()

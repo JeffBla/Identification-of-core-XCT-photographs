@@ -1,9 +1,12 @@
 # ignore environment, pictures and projectDEMO
 venv
+.vscode
 bh-3 DICOM-20230421T075124Z-001
 __pycache__
 projectDEMO
 
+# ignore test folder
+testMha
 
 # ignore the zip file
 bh-3DICOM-20230421T075124Z-001.zip

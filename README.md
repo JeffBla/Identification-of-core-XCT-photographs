@@ -57,3 +57,7 @@ It will have a big error if we only use findContours algorithm since when we fin
 ### setting:
 
 - config.json
+
+### module used
+
+![panimg 0.12.0](https://pypi.org/project/panimg/)
