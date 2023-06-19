@@ -1,4 +1,4 @@
-from pydicom import dcmread
+from pydicom import dcmread, dcmwrite
 import cv2 as cv
 import numpy as np
 import pandas as pd
@@ -7,11 +7,10 @@ import matplotlib.pyplot as plt
 import plotly.express as px
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
-import cufflinks
 
 from config import config
 
-shrinkToCenter = 2
+shrinkToCenter = 0
 
 
 def checkInCircle(cx, cy, r, idxX, idxY) -> bool:
@@ -31,13 +30,10 @@ def show_brightness(event, x, y, flags, userdata):
         print(f"x: {x}, y: {y}, color: {Hu[y,x]}")
 
 
-# 2.5吋
-# now -> 3吋 container outter 89mm diameter, inner  77 mm
-
 for i in range(1, 21):
-    with open(
-            f'./bh-3 DICOM-20230421T075124Z-001/bh3 15 dicom_20/IM-0001-{i:04d}.dcm',
-            'rb') as f:
+    filename = f'IM-0001-{i:04d}.dcm'
+    with open('./bh-3 DICOM-20230421T075124Z-001/bh3 15 dicom_20/' + filename,
+              'rb') as f:
         ds = dcmread(f)
         # print("正常的或被压缩的：" + ds.file_meta.TransferSyntaxUID.name)
         # print(f"Rescale Slope: {ds.RescaleSlope}")
@@ -103,6 +99,7 @@ for i in range(1, 21):
                 # draw the center of the circle
                 cv.circle(cimg, (i[0], i[1]), 2, (0, 0, 255), 3)
 
+                # calculate porosity
                 numOfVoxel = 0
                 circleHuList = np.array([])
                 circleVwList = np.array([])
@@ -124,6 +121,20 @@ for i in range(1, 21):
                            config['imgTextFontScale'], config['imgTextColor'],
                            config['imgTextThickness'], cv.LINE_AA)
                 print(f'porosity: {circleVwList.sum() / numOfVoxel}')
+
+                # output circle dicom file matched center for 3d
+                circle_px_arr = px_arr
+                target_row = i[1] - config['cutCycleRadius']
+                target_col = i[0] - config['cutCycleRadius']
+                circle_px_arr = circle_px_arr[target_row:target_row +
+                                              2 * config['cutCycleRadius'],
+                                              target_col:target_col +
+                                              2 * config['cutCycleRadius']]
+                ds.PixelData = circle_px_arr.tobytes()
+                ds.Rows = circle_px_arr.shape[0]
+                ds.Columns = circle_px_arr.shape[1]
+                ds.save_as("./dcmCutCycleOut/" + filename)
+
         # matplotlib view
         # fig, axes = plt.subplots(2)
         # counts, bins = np.histogram(circleHuList, 100)
@@ -142,9 +153,9 @@ for i in range(1, 21):
 
         # fig.show()
 
-        # image process
-        cv.imshow('detected circles', cimg)
+        # show image
+        # cv.imshow('detected circles', cimg)
         # cv.imshow('canny', imgCanny)
-        cv.setMouseCallback('detected circles', show_brightness)
-        cv.waitKey(0)
-        cv.destroyAllWindows()
+        # cv.setMouseCallback('detected circles', show_brightness)
+        # cv.waitKey(0)
+        # cv.destroyAllWindows()
