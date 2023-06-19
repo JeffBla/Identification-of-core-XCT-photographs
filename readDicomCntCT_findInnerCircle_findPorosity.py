@@ -63,6 +63,7 @@ for i in range(1, 21):
         img = cv.medianBlur(o8, 5)
         cimg = cv.cvtColor(img, cv.COLOR_GRAY2BGR)
         imgCanny = cv.Canny(img, 30, 150)
+
         circles = cv.HoughCircles(imgCanny,
                                   cv.HOUGH_GRADIENT,
                                   2,
@@ -92,48 +93,40 @@ for i in range(1, 21):
         # Inside circles
         if circles is not None:
             circles = np.uint16(np.around(circles))
-            for index, i in enumerate(circles[0, :]):
-                # draw the outer circle
-                cv.circle(cimg, (i[0], i[1]), i[2] - shrinkToCenter,
-                          (0, 0, 255), 2)
-                # draw the center of the circle
-                cv.circle(cimg, (i[0], i[1]), 2, (0, 0, 255), 3)
 
-                # calculate porosity
-                numOfVoxel = 0
-                circleHuList = np.array([])
-                circleVwList = np.array([])
-                for idx, j in np.ndenumerate(Hu):
-                    # check is inside the circle and coutour?
-                    # pointPolygonTest -> positive (inside), negative (outside), or zero (on an edge)
-                    if (checkInCircle(i[0], i[1], i[2] - shrinkToCenter,
-                                      idx[1], idx[0]) and
-                        (cv.pointPolygonTest(big_contour,
-                                             (idx[1], idx[0]), False) > 0)):
-                        numOfVoxel += 1
-                        circleHuList = np.append(circleHuList, Hu[idx[0],
-                                                                  idx[1]])
+            # Sometimes, I will many cycles in a image.
+            # The way I choose is based on the y vale
+            # I choose the topest of the center of circle.
+            argmax = np.argmin(circles[0, :, 1])
 
-                CTG = np.max(circleHuList)
-                circleVwList = (CTG - circleHuList) / CTG
-                cv.putText(cimg, f'{ circleVwList.sum() / numOfVoxel }',
-                           (0, 45 + 45 * index), cv.FONT_HERSHEY_SIMPLEX,
-                           config['imgTextFontScale'], config['imgTextColor'],
-                           config['imgTextThickness'], cv.LINE_AA)
-                print(f'porosity: {circleVwList.sum() / numOfVoxel}')
+            circle = circles[0, argmax]
+            # draw the outer circle
+            cv.circle(cimg, (circle[0], circle[1]), circle[2] - shrinkToCenter,
+                      (0, 0, 255), 2)
+            # draw the center of the circle
+            cv.circle(cimg, (circle[0], circle[1]), 2, (0, 0, 255), 3)
 
-                # output circle dicom file matched center for 3d
-                circle_px_arr = px_arr
-                target_row = i[1] - config['cutCycleRadius']
-                target_col = i[0] - config['cutCycleRadius']
-                circle_px_arr = circle_px_arr[target_row:target_row +
-                                              2 * config['cutCycleRadius'],
-                                              target_col:target_col +
-                                              2 * config['cutCycleRadius']]
-                ds.PixelData = circle_px_arr.tobytes()
-                ds.Rows = circle_px_arr.shape[0]
-                ds.Columns = circle_px_arr.shape[1]
-                ds.save_as("./dcmCutCycleOut/" + filename)
+            # calculate porosity
+            numOfVoxel = 0
+            circleHuList = np.array([])
+            circleVwList = np.array([])
+            for idx, j in np.ndenumerate(Hu):
+                # check is inside the circle and coutour?
+                # pointPolygonTest -> positive (inside), negative (outside), or zero (on an edge)
+                if (checkInCircle(i[0], i[1], i[2] - shrinkToCenter, idx[1],
+                                  idx[0]) and
+                    (cv.pointPolygonTest(big_contour,
+                                         (idx[1], idx[0]), False) > 0)):
+                    numOfVoxel += 1
+                    circleHuList = np.append(circleHuList, Hu[idx[0], idx[1]])
+
+            CTG = np.max(circleHuList)
+            circleVwList = (CTG - circleHuList) / CTG
+            cv.putText(cimg, f'{ circleVwList.sum() / numOfVoxel }', (0, 45),
+                       cv.FONT_HERSHEY_SIMPLEX, config['imgTextFontScale'],
+                       config['imgTextColor'], config['imgTextThickness'],
+                       cv.LINE_AA)
+            print(f'porosity: {circleVwList.sum() / numOfVoxel}')
 
         # matplotlib view
         # fig, axes = plt.subplots(2)
@@ -154,8 +147,9 @@ for i in range(1, 21):
         # fig.show()
 
         # show image
-        # cv.imshow('detected circles', cimg)
-        # cv.imshow('canny', imgCanny)
-        # cv.setMouseCallback('detected circles', show_brightness)
-        # cv.waitKey(0)
-        # cv.destroyAllWindows()
+        cv.imshow('detected circles', cimg)
+        # cv.imshow('img', img)
+        # cv.imshow('imgCanny', imgCanny)
+        cv.setMouseCallback('detected circles', show_brightness)
+        cv.waitKey(0)
+        cv.destroyAllWindows()
