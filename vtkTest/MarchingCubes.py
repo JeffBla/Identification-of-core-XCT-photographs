@@ -11,6 +11,7 @@ from vtkmodules.vtkFiltersCore import (vtkFlyingEdges3D, vtkMarchingCubes)
 from vtkmodules.vtkFiltersSources import vtkSphereSource
 from vtkmodules.vtkIOImage import vtkDICOMImageReader
 from vtkmodules.vtkImagingHybrid import vtkVoxelModeller
+from vtkmodules.vtkImagingCore import vtkImageThreshold
 from vtkmodules.vtkInteractionStyle import vtkInteractorStyleTrackballCamera
 from vtkmodules.vtkRenderingCore import (vtkActor, vtkPolyDataMapper,
                                          vtkRenderWindow,
@@ -24,9 +25,10 @@ def main():
 
     colors = vtkNamedColors()
 
-    dicom_dir, iso_value = get_program_parameters()
-    if iso_value is None and dicom_dir is not None:
-        print('An ISO value is needed.')
+    dicom_dir, iso_value_lower, iso_value_upper = get_program_parameters()
+    if (iso_value_lower is None
+            or iso_value_upper is None) and dicom_dir is not None:
+        print('ISO values is needed.')
         return ()
 
     volume = vtkImageData()
@@ -49,7 +51,8 @@ def main():
 
         voxel_modeller.SetInputConnection(sphere_source.GetOutputPort())
         voxel_modeller.Update()
-        iso_value = 0.5
+        iso_value_lower = 0
+        iso_value_upper = 0.5
         volume.DeepCopy(voxel_modeller.GetOutput())
     else:
         reader = vtkDICOMImageReader()
@@ -57,16 +60,19 @@ def main():
         reader.Update()
         volume.DeepCopy(reader.GetOutput())
 
-    if use_flying_edges:
-        try:
-            surface = vtkFlyingEdges3D()
-        except AttributeError:
-            surface = vtkMarchingCubes()
-    else:
-        surface = vtkMarchingCubes()
+    # if use_flying_edges:
+    #     try:
+    #         surface = vtkFlyingEdges3D()
+    #     except AttributeError:
+    #         surface = vtkMarchingCubes()
+    # else:
+    #     surface = vtkMarchingCubes()
+    surface = vtkMarchingCubes()
     surface.SetInputData(volume)
     surface.ComputeNormalsOn()
-    surface.SetValue(0, iso_value)
+    surface.SetValue(0, iso_value_lower)
+    surface.SetValue(1, iso_value_upper)
+    surface.Update()
 
     renderer = vtkRenderer()
     renderer.SetBackground(colors.GetColor3d('DarkSlateGray'))
@@ -106,12 +112,16 @@ def get_program_parameters():
         epilog=epilogue,
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('-d', default=None, help='A DICOM Image directory.')
-    parser.add_argument('-i',
+    parser.add_argument('-il',
                         type=float,
                         default=None,
-                        help='The iso value to use.')
+                        help='The lower iso value to use.')
+    parser.add_argument('-iu',
+                        type=float,
+                        default=None,
+                        help='The upper iso value to use.')
     args = parser.parse_args()
-    return args.d, args.i
+    return args.d, args.il, args.iu
 
 
 def vtk_version_ok(major, minor, build):

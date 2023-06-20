@@ -7,6 +7,7 @@ projectDEMO
 
 # ignore test folder
 testMha
+testDcmOut
 
 # ignore the zip file
 bh-3DICOM-20230421T075124Z-001.zip
@@ -17,3 +18,4 @@ dsInfo.txt
 
 # output folder
 dcmCutCycleOut
+dcmCutCycleOut_copy

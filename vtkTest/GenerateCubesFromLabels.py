@@ -44,6 +44,8 @@ def main():
         return
     reader.Update()
 
+    # The DICOM import by VTK includes the conversion to HU units.
+
     # Pad the volume so that we can change the point data into cell
     # data.
     extent = reader.GetOutput().GetExtent()
@@ -85,6 +87,7 @@ def main():
 
     actor = vtkActor()
     actor.SetMapper(mapper)
+    actor.GetProperty().SetColor(colors.GetColor3d('Gray'))
 
     renderer = vtkRenderer()
     render_window = vtkRenderWindow()

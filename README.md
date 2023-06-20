@@ -61,3 +61,11 @@ It will have a big error if we only use findContours algorithm since when we fin
 ### module used
 
 ![panimg 0.12.0](https://pypi.org/project/panimg/)
+
+### meeting
+
+python .\GenerateCubesFromLabels.py '../dcmCutCycleOut_copy' 0 300 2  
+python .\GenerateCubesFromLabels.py '../dcmCutCycleOut_copy' 0 5000 2
+python .\readDicomCntCT_findInnerCircle_findPorosity.py '.\dcmCutCycleOut_copy\'
+python .\readDicomCntCT_findInnerCircle_findPorosity.py '.\dcmCutCycleOut_copy\' --isDraw
+python .\readDicom_pickCenter3d.py '.\dcmCutCycleOut_copy\' --isDraw -outDirname './testDcmOut'

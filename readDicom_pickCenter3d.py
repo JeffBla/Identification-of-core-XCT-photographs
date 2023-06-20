@@ -1,16 +1,41 @@
-from pydicom import dcmread, dcmwrite
+from pydicom import dcmread
 import cv2 as cv
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 
-import plotly.express as px
-from plotly.subplots import make_subplots
-import plotly.graph_objects as go
+import os
+from pathlib import Path
 
 from config import config
 
 shrinkToCenter = 0
+
+
+def get_program_parameters():
+    import argparse
+    description = 'Align the center of target cycle, and output the dicom image cut by the target cycle.'
+    epilogue = '''
+ Output folder default is dcmCutCycleOut.
+     '''
+    parser = argparse.ArgumentParser(
+        description=description,
+        epilog=epilogue,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument(
+        'inDirname',
+        help=
+        'The target dir only contain dicom files, and all files in the dir will be read.'
+    )
+    parser.add_argument('-outDirname',
+                        default='./dcmCutCycleOut',
+                        help='The output dicom files are stored here')
+    parser.add_argument(
+        '--isDraw',
+        action=argparse.BooleanOptionalAction,
+        help='Show images contain circle ,contour and porosity.')
+
+    args = parser.parse_args()
+    return args.inDirname, args.outDirname, args.isDraw
 
 
 def checkInCircle(cx, cy, r, idxX, idxY) -> bool:
@@ -30,10 +55,11 @@ def show_brightness(event, x, y, flags, userdata):
         print(f"x: {x}, y: {y}, color: {Hu[y,x]}")
 
 
-for i in range(1, 21):
-    filename = f'IM-0001-{i:04d}.dcm'
-    with open('./bh-3 DICOM-20230421T075124Z-001/bh3 15 dicom_20/' + filename,
-              'rb') as f:
+inDirname, outDirname, isDraw = get_program_parameters()
+
+files = os.listdir(inDirname)
+for filename in files:
+    with open(Path(inDirname, filename), 'rb') as f:
         ds = dcmread(f)
         # print("正常的或被压缩的：" + ds.file_meta.TransferSyntaxUID.name)
         # print(f"Rescale Slope: {ds.RescaleSlope}")
@@ -62,12 +88,13 @@ for i in range(1, 21):
         # do the Hough transform
         img = cv.medianBlur(o8, 5)
         cimg = cv.cvtColor(img, cv.COLOR_GRAY2BGR)
+        imgCanny = cv.Canny(img, 30, 150)
 
         # erode
         kernel = cv.getStructuringElement(cv.MORPH_RECT, (5, 5))
         imgErode = cv.erode(img, kernel)
 
-        circles = cv.HoughCircles(imgErode,
+        circles = cv.HoughCircles(imgCanny,
                                   cv.HOUGH_GRADIENT,
                                   2,
                                   40,
@@ -75,23 +102,6 @@ for i in range(1, 21):
                                   param2=95,
                                   minRadius=110,
                                   maxRadius=130)
-
-        # area finding
-        # Threshold the image to create a binary image
-        ret, thresh = cv.threshold(img, 127, 255, cv.THRESH_BINARY)
-        contours, hierarchy = cv.findContours(thresh, 2, 1)
-
-        cnt = contours
-        big_contour = []
-        max = 0
-        for i in cnt:
-            area = cv.contourArea(
-                i)  #--- find the contour having biggest area ---
-            if (area > max):
-                max = area
-                big_contour = i
-
-        cv.drawContours(cimg, big_contour, -1, (0, 255, 0), 2)
 
         # Inside circles
         if circles is not None:
@@ -103,11 +113,6 @@ for i in range(1, 21):
             argmax = np.argmin(circles[0, :, 1])
 
             circle = circles[0, argmax]
-            # draw the outer circle
-            cv.circle(cimg, (circle[0], circle[1]), circle[2] - shrinkToCenter,
-                      (0, 0, 255), 2)
-            # draw the center of the circle
-            cv.circle(cimg, (circle[0], circle[1]), 2, (0, 0, 255), 3)
 
             # output circle dicom file matched center for 3d
             circle_px_arr = px_arr
@@ -120,12 +125,20 @@ for i in range(1, 21):
             ds.PixelData = circle_px_arr.tobytes()
             ds.Rows = circle_px_arr.shape[0]
             ds.Columns = circle_px_arr.shape[1]
-            ds.save_as("./dcmCutCycleOut/" + filename)
+            ds.save_as(Path(outDirname, filename))
 
         # show image
-        # cv.imshow('detected circles', cimg)
-        # cv.imshow('img', img)
-        # cv.imshow('imgErode', imgErode)
-        # cv.setMouseCallback('detected circles', show_brightness)
-        # cv.waitKey(0)
-        # cv.destroyAllWindows()
+        if isDraw:
+            if circles is not None:
+                # draw the outer circle
+                cv.circle(cimg, (circle[0], circle[1]),
+                          circle[2] - shrinkToCenter, (0, 0, 255), 2)
+                # draw the center of the circle
+                cv.circle(cimg, (circle[0], circle[1]), 2, (0, 0, 255), 3)
+
+            cv.imshow('detected circles', cimg)
+            # cv.imshow('img', img)
+            # cv.imshow('imgErode', imgErode)
+            cv.setMouseCallback('detected circles', show_brightness)
+            cv.waitKey(0)
+            cv.destroyAllWindows()
