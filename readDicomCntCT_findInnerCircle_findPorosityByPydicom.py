@@ -1,9 +1,3 @@
-# noinspection PyUnresolvedReferences
-import vtkmodules.vtkInteractionStyle
-# noinspection PyUnresolvedReferences
-import vtkmodules.vtkRenderingOpenGL2
-from vtkmodules.vtkIOImage import vtkDICOMImageReader
-
 from pydicom import dcmread
 import cv2 as cv
 import numpy as np
@@ -64,12 +58,6 @@ def show_brightness(event, x, y, flags, userdata):
 
 
 inDirname, isDraw = get_program_parameters()
-
-reader = vtkDICOMImageReader()
-reader.SetDirectoryName(inDirname)
-reader.Update()
-
-dcmImage_CT = reader.GetOutput().GetPointData().GetScalars()
 
 files = os.listdir(inDirname)
 porosityList = np.array([])

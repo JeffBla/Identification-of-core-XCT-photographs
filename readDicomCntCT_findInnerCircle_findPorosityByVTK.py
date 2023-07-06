@@ -76,18 +76,18 @@ dcmImage_CT = np.array(reader.GetOutput().GetPointData().GetScalars()).reshape(
 
 porosityList = np.array([])
 for index, filename in enumerate(files):
-    # print("正常的或被压缩的：" + ds.file_meta.TransferSyntaxUID.name)
-    # print(f"Rescale Slope: {ds.RescaleSlope}")
-    # print(f"Rescale Intercept: {ds.RescaleIntercept}")
+    # print("正常的或被压缩的：" + reader.GetTransferSyntaxUID())
+    # print(f"Rescale Slope: {reader.GetRescaleSlope()}")
+    # print(f"Rescale Intercept: {reader.GetRescaleOffset()}")
     # print("The formula of CT value: Hu = pixel * slope + intercept")
     # with open('dsInfo.txt', 'w') as tf:
     #     tf.write(str(ds))
 
     # 提取像素數據
-    px_arr = np.flipud(dcmImage_CT[index])
-    px_arr = (px_arr - reader.GetRescaleOffset()) / reader.GetRescaleSlope()
     # CT value
-    Hu = dcmImage_CT[index]
+    Hu = np.flipud(dcmImage_CT[index])
+
+    px_arr = (Hu - reader.GetRescaleOffset()) / reader.GetRescaleSlope()
 
     # # rescale original 16 bit image to 8 bit values [0,255]
     x0 = np.min(px_arr)
@@ -102,7 +102,7 @@ for index, filename in enumerate(files):
     # print(f"rescaled data type={o8.dtype}")
 
     # do the Hough transform
-    img = cv.medianBlur(o8, 5)
+    img = o8
     cimg = cv.cvtColor(img, cv.COLOR_GRAY2BGR)
     imgCanny = cv.Canny(img, 30, 150)
 
@@ -178,6 +178,15 @@ for index, filename in enumerate(files):
 
     # fig.append_trace(go.Histogram(x=circleVwList, name='Vw'), row=2, col=1)
 
+    # 3d visualize Hu by ployly
+    # sh_0, sh_1 = Hu.shape
+    # x, y = np.linspace(0, 1, sh_0), np.linspace(0, 1, sh_1)
+
+    # fig = go.Figure(data=[go.Surface(z=Hu, x=y, y=x)])
+    # fig.update_traces(contours_z=dict(show=True,
+    #                                   usecolormap=True,
+    #                                   highlightcolor="limegreen",
+    #                                   project_z=True))
     # fig.show()
 
     # show image
@@ -190,10 +199,10 @@ for index, filename in enumerate(files):
             cv.circle(cimg, (circle[0], circle[1]), 2, (0, 0, 255), 3)
 
             cv.drawContours(cimg, big_contour, -1, (0, 255, 0), 2)
-            # cv.putText(cimg, f'{porosity}', (0, 45), cv.FONT_HERSHEY_SIMPLEX,
-            #            config['imgTextFontScale'], config['imgTextColor'],
-            #            config['imgTextThickness'], cv.LINE_AA)
-            # print(f"{filename}'s porosity: {porosity}")
+            cv.putText(cimg, f'{porosity}', (0, 45), cv.FONT_HERSHEY_SIMPLEX,
+                       config['imgTextFontScale'], config['imgTextColor'],
+                       config['imgTextThickness'], cv.LINE_AA)
+            print(f"{filename}'s porosity: {porosity}")
 
         cv.imshow('detected circles', cimg)
         # cv.imshow('img', thresh)

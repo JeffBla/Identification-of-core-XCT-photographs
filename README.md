@@ -62,10 +62,20 @@ It will have a big error if we only use findContours algorithm since when we fin
 
 ![panimg 0.12.0](https://pypi.org/project/panimg/)
 
+### math
+
+- 最大 porosity 是用 F 點算出來的。最小是用 E 點算出來的
+  https://www.geogebra.org/calculator/dsfm3pdx
+
 ### meeting
 
 python .\GenerateCubesFromLabels.py '../dcmCutCycleOut_copy' 0 300 2  
 python .\GenerateCubesFromLabels.py '../dcmCutCycleOut_copy' 0 5000 2
-python .\readDicomCntCT_findInnerCircle_findPorosity.py '.\dcmCutCycleOut_copy\'
-python .\readDicomCntCT_findInnerCircle_findPorosity.py '.\dcmCutCycleOut_copy\' --isDraw
-python .\readDicom_pickCenter3d.py '.\dcmCutCycleOut_copy\' --isDraw -outDirname './testDcmOut'
+python .\readDicomCntCT_findInnerCircle_findPorosityByVTK.py '.\dcmCutCycleOut_copy\'
+python .\readDicomCntCT_findInnerCircle_findPorosityByVTK.py '.\dcmCutCycleOut_copy\' --isDraw
+python .\readDicom_pickCenter3d.py './bh-3 DICOM-20230421T075124Z-001/bh3 15 dicom_20' --isDraw -outDirname './testDcmOut'
+python .\readDicom_pickCenter3d.py './bh-3 DICOM-20230421T075124Z-001/bh3 15 dicom_20' -outDirname './testDcmOut'
+
+## Out Come
+
+![Porosity OutCome](./projectDEMO/porosityOutCome.png)
