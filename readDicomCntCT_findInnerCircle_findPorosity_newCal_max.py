@@ -151,7 +151,8 @@ for index, filename in enumerate(files):
                                              (idx[1], idx[0]), False) > 0)):
                 if Hu[idx[0], idx[1]] > 0:
                     constMat = np.array([Hu[idx[0], idx[1]], 0])
-                    coefMat = np.array([[2232.875, -1000], [0, 1]])
+                    uPlus2S = Hu.sum() / Hu.size() + 2 * Hu.std()
+                    coefMat = np.array([[uPlus2S, -1000], [1, 1]])
                     varMat = np.linalg.inv(coefMat) @ constMat
                     # get the percent of solid
                     solidPercent = varMat[0]

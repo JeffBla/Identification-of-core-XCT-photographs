@@ -1,5 +1,5 @@
 # ignore environment, pictures and projectDEMO
-venv
+*venv*
 .vscode
 bh-3 DICOM-20230421T075124Z-001
 __pycache__

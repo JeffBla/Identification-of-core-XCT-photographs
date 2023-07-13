@@ -142,6 +142,7 @@ for index, filename in enumerate(files):
         circle = circles[0, argmax]
 
         # calculate porosity
+        circleHuList = np.array([])
         for idx, j in np.ndenumerate(Hu):
             # check is inside the circle and coutour?
             # pointPolygonTest -> positive (inside), negative (outside), or zero (on an edge)
@@ -149,13 +150,18 @@ for index, filename in enumerate(files):
                               idx[1], idx[0])
                     and (cv.pointPolygonTest(big_contour,
                                              (idx[1], idx[0]), False) > 0)):
-                constMat = np.array([Hu[idx[0], idx[1]], 1])
-                coefMat = np.array([[2232.875, -1000], [1, 1]])
-                varMat = np.linalg.inv(coefMat) @ constMat
-                # get the percent of solid
-                solidPercent = varMat[0]
-                fluidPercentList = np.append(fluidPercentList,
-                                             1 - solidPercent)
+                circleHuList = np.append(circleHuList, Hu[idx[0], idx[1]])
+
+        for Hu_element in circleHuList:
+            constMat = np.array([Hu_element, 1])
+            uPlus2S = circleHuList.sum(
+            ) / circleHuList.size + 1 * circleHuList.std()
+            coefMat = np.array([[uPlus2S, -1000], [1, 1]])
+            varMat = np.linalg.inv(coefMat) @ constMat
+            # get the percent of solid
+            solidPercent = varMat[0]
+            fluidPercentList = np.append(fluidPercentList, 1 - solidPercent)
+
         if fluidPercentList.size != 0:
             porosity = fluidPercentList.sum() / len(fluidPercentList)
             porosityList = np.append(porosityList, porosity)
@@ -173,10 +179,8 @@ for index, filename in enumerate(files):
     # plt.show()
 
     # plotly view
-    # fig = make_subplots(2)
+    # fig = make_subplots(1)
     # fig.append_trace(go.Histogram(x=circleHuList, name='Hu'), row=1, col=1)
-
-    # fig.append_trace(go.Histogram(x=circleVwList, name='Vw'), row=2, col=1)
 
     # 3d visualize Hu by ployly
     # sh_0, sh_1 = Hu.shape

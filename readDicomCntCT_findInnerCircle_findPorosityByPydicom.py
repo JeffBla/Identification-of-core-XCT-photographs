@@ -143,7 +143,7 @@ for idx, filename in enumerate(files):
                     numOfVoxel += 1
                     circleHuList = np.append(circleHuList, Hu[idx[0], idx[1]])
 
-            CTG = np.max(circleHuList)
+            CTG = 2232.875
             circleVwList = (CTG - circleHuList) / CTG
             porosity = circleVwList.sum() / numOfVoxel
             porosityList = np.append(porosityList, porosity)
@@ -189,4 +189,4 @@ for idx, filename in enumerate(files):
             cv.waitKey(0)
             cv.destroyAllWindows()
 
-print(porosityList.sum())
+print(porosityList.sum() / len(porosityList))
