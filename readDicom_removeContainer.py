@@ -86,23 +86,22 @@ for filename in files:
         # print(f"rescaled data type={o8.dtype}")
 
         # do the Hough transform
-        img = cv.medianBlur(o8, 5)
+        img = o8
         cimg = cv.cvtColor(img, cv.COLOR_GRAY2BGR)
         imgCanny = cv.Canny(img, 30, 150)
 
         # erode
-        kernel = cv.getStructuringElement(cv.MORPH_RECT, (5, 5))
+        kernel = cv.getStructuringElement(cv.MORPH_RECT, (6, 6))
         imgErode = cv.erode(img, kernel)
 
-        circles = cv.HoughCircles(imgCanny,
+        circles = cv.HoughCircles(imgErode,
                                   cv.HOUGH_GRADIENT,
                                   2,
                                   40,
                                   param1=70,
                                   param2=95,
                                   minRadius=110,
-                                  maxRadius=130)
-
+                                  maxRadius=125)
         # Inside circles
         if circles is not None:
             circles = np.uint16(np.around(circles))
@@ -129,6 +128,9 @@ for filename in files:
             cv.circle(canvas, (centerX, centerY), radius, color, thickness)
 
             # Create a copy of the input and mask input:
+            imgCopy = img.copy()
+            imgCopy[canvas == 0] = 0
+
             px_arrCopy = px_arr.copy()
             px_arrCopy[canvas == 0] = 0
 
@@ -138,6 +140,7 @@ for filename in files:
             h = 2 * radius
             w = 2 * radius
 
+            croppedImg = imgCopy[y:y + h, x:x + w]
             croppedPx_arr = px_arrCopy[y:y + h, x:x + w]
 
             # output circle dicom file matched center for 3d
@@ -154,10 +157,10 @@ for filename in files:
                           circle[2] - shrinkToCenter, (0, 0, 255), 2)
                 # draw the center of the circle
                 cv.circle(cimg, (circle[0], circle[1]), 2, (0, 0, 255), 3)
+                cv.imshow('Crop img', croppedImg)
 
             cv.imshow('detected circles', cimg)
             # cv.imshow('img', img)
-            # cv.imshow('imgErode', imgErode)
             cv.setMouseCallback('detected circles', show_brightness)
             cv.waitKey(0)
             cv.destroyAllWindows()
