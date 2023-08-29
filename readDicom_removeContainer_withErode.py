@@ -38,13 +38,6 @@ def get_program_parameters():
     return args.inDirname, args.outDirname, args.isDraw
 
 
-def checkInCircle(cx, cy, r, idxX, idxY) -> bool:
-    if (idxX - cx)**2 + (idxY - cy)**2 < r**2:
-        return True
-    else:
-        return False
-
-
 def show_brightness(event, x, y, flags, userdata):
     if (event == cv.EVENT_LBUTTONDOWN):
         # test the x,y position in img array
@@ -91,10 +84,15 @@ for filename in files:
         imgCanny = cv.Canny(img, 30, 150)
 
         # erode
-        kernel = cv.getStructuringElement(cv.MORPH_RECT, (6, 6))
-        imgErode = cv.erode(img, kernel)
+        kernelCircle = cv.getStructuringElement(cv.MORPH_RECT, (5, 5))
+        imgErodeC = cv.erode(img, kernelCircle)
+        # mask
+        kernelMask = cv.getStructuringElement(cv.MORPH_RECT, (8, 8))
+        imgErodeM = cv.erode(img, kernelMask)
+        imgMask = cv.dilate(imgErodeM, kernelMask)
+        ret, imgMaskBin = cv.threshold(imgMask, 30, 255, cv.THRESH_BINARY)
 
-        circles = cv.HoughCircles(imgErode,
+        circles = cv.HoughCircles(imgErodeC,
                                   cv.HOUGH_GRADIENT,
                                   2,
                                   40,
@@ -130,9 +128,11 @@ for filename in files:
             # Create a copy of the input and mask input:
             imgCopy = img.copy()
             imgCopy[canvas == 0] = 0
+            imgCopy[imgMaskBin == 0] = 0
 
             px_arrCopy = px_arr.copy()
             px_arrCopy[canvas == 0] = 0
+            px_arrCopy[imgMaskBin == 0] = 0
 
             # Crop the roi:
             x = centerX - radius
@@ -160,7 +160,8 @@ for filename in files:
                 cv.imshow('Crop img', croppedImg)
 
             cv.imshow('detected circles', cimg)
-            # cv.imshow('img', img)
-            cv.setMouseCallback('detected circles', show_brightness)
+            # cv.imshow('imgMask', imgMask)
+            # cv.imshow('imgMaskBin', imgMaskBin)
+            # cv.setMouseCallback('detected circles', show_brightness)
             cv.waitKey(0)
             cv.destroyAllWindows()

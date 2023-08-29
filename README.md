@@ -69,7 +69,7 @@ It will have a big error if we only use findContours algorithm since when we fin
 
 ### meeting
 
-python .;GenerateCubesFromLabels.py '../dcmCutCycleOut_copy' 0 300 2  
+python ./GenerateCubesFromLabels.py '../dcmCutCycleOut_copy' 0 300 2  
 python ./GenerateCubesFromLabels.py '../dcmCutCycleOut_copy' 0 5000 2
 python ./readDicomCntCT_findInnerCircle_findPorosityByVTK.py './dcmCutCycleOut_copy/'
 python ./readDicomCntCT_findInnerCircle_findPorosityByVTK.py './dcmCutCycleOut_copy/' --isDraw
