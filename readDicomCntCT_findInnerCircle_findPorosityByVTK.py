@@ -178,15 +178,15 @@ for index, filename in enumerate(files):
     # fig.append_trace(go.Histogram(x=circleVwList, name='Vw'), row=2, col=1)
 
     # 3d visualize Hu by ployly
-    sh_0, sh_1 = Hu.shape
-    x, y = np.linspace(0, 1, sh_0), np.linspace(0, 1, sh_1)
+    # sh_0, sh_1 = Hu.shape
+    # x, y = np.linspace(0, 1, sh_0), np.linspace(0, 1, sh_1)
 
-    fig = go.Figure(data=[go.Surface(z=Hu, x=y, y=x)])
-    fig.update_traces(contours_z=dict(show=True,
-                                      usecolormap=True,
-                                      highlightcolor="limegreen",
-                                      project_z=True))
-    fig.show()
+    # fig = go.Figure(data=[go.Surface(z=Hu, x=y, y=x)])
+    # fig.update_traces(contours_z=dict(show=True,
+    #                                   usecolormap=True,
+    #                                   highlightcolor="limegreen",
+    #                                   project_z=True))
+    # fig.show()
 
     # show image
     if isDraw:

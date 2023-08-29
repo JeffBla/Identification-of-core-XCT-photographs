@@ -79,3 +79,7 @@ python ./readDicom_pickCenter3d.py './bh-3 DICOM-20230421T075124Z-001/bh3 15 dic
 ## Out Come
 
 ![Porosity OutCome](./projectDEMO/porosityOutCome.png)
+
+## calculate flow
+
+1. CNN is not good.
