@@ -9,6 +9,7 @@ from pathlib import Path
 from config import config
 
 shrinkToCenter = 0
+IMAGE_SIZE = 300
 
 
 def get_program_parameters():
@@ -135,10 +136,10 @@ for filename in files:
             px_arrCopy[imgMaskBin == 0] = 0
 
             # Crop the roi:
-            x = centerX - radius
-            y = centerY - radius
-            h = 2 * radius
-            w = 2 * radius
+            x = centerX - int(IMAGE_SIZE / 2)
+            y = centerY - int(IMAGE_SIZE / 2)
+            h = int(2 * IMAGE_SIZE / 2)
+            w = int(2 * IMAGE_SIZE / 2)
 
             croppedImg = imgCopy[y:y + h, x:x + w]
             croppedPx_arr = px_arrCopy[y:y + h, x:x + w]
