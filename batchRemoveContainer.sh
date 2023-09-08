@@ -11,19 +11,37 @@ dcmDir19_2="19/13360001_dcm"
 dcmDir20_1="20/13420000_dcm"
 dcmDir20_2="20/13420001_dcm"
 
-dcmDirArr=($dcmDir16_1 $dcmDir16_2 $dcmDir17_1 $dcmDir17_2
-    $dcmDir18_1 $dcmDir18_2 $dcmDir19_1 $dcmDir19_2
-    $dcmDir20_1 $dcmDir20_2)
+dcmDirArr_train=($dcmDir16_1 $dcmDir16_2 $dcmDir17_1 $dcmDir17_2
+    $dcmDir18_1 $dcmDir18_2 $dcmDir19_1 $dcmDir19_2)
 
-target=16
-cnt=0
-for dcmDir in ${dcmDirArr[@]}; do
-    if [ $cnt -eq 2 ]; then
-        cnt=0
-        ((target++))
-    fi
+dcmDirArr_test=($dcmDir20_1 $dcmDir20_2)
+
+# put the result separately
+# target=16
+# cnt=0
+# for dcmDir in ${dcmDirArr[@]}; do
+#     if [ $cnt -eq 2 ]; then
+#         cnt=0
+#         ((target++))
+#     fi
+#     python readDicom_removeContainer_withErode.py \
+#         "$dcmDirHead$dcmDir" \
+#         -outDirname "./dcmCutCycleOut/$target" \
+#         --isTwice
+#     ((cnt++))
+# done
+
+# put the result together -> train and test
+for dcmDir in ${dcmDirArr_train[@]}; do
     python readDicom_removeContainer_withErode.py \
         "$dcmDirHead$dcmDir" \
-        -outDirname "./dcmCutCycleOut/$target"
-    ((cnt++))
+        -outDirname "./dcmCutCycleOut/train" \
+        --isTwice
+done
+
+for dcmDir in ${dcmDirArr_test[@]}; do
+    python readDicom_removeContainer_withErode.py \
+        "$dcmDirHead$dcmDir" \
+        -outDirname "./dcmCutCycleOut/test" \
+        --isTwice
 done

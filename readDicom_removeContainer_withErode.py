@@ -6,8 +6,6 @@ import pandas as pd
 import os
 from pathlib import Path
 
-from config import config
-
 shrinkToCenter = 0
 
 
@@ -37,13 +35,15 @@ def get_program_parameters():
         '--isDraw',
         action=argparse.BooleanOptionalAction,
         help='Show images contain circle ,contour and porosity.')
-    parser.add_argument(
-        '--isCrop',
-        action=argparse.BooleanOptionalAction,
-        help='Show images contain circle ,contour and porosity.')
+    parser.add_argument('--isCrop',
+                        action=argparse.BooleanOptionalAction,
+                        help='Crop the image to the imgSize.')
+    parser.add_argument('--isTwice',
+                        action=argparse.BooleanOptionalAction,
+                        help='Append the image, width x2, to feed the pix2pix')
 
     args = parser.parse_args()
-    return args.inDirname, args.outDirname, args.imgSize, args.isDraw, args.isCrop
+    return args.inDirname, args.outDirname, args.imgSize, args.isDraw, args.isCrop, args.isTwice
 
 
 def show_brightness(event, x, y, flags, userdata):
@@ -56,7 +56,8 @@ def show_brightness(event, x, y, flags, userdata):
         print(f"x: {x}, y: {y}, color: {Hu[y,x]}")
 
 
-inDirname, outDirname, IMAGE_SIZE, isDraw, isCrop = get_program_parameters()
+inDirname, outDirname, IMAGE_SIZE, isDraw, isCrop, isTwice = get_program_parameters(
+)
 
 files = os.listdir(inDirname)
 for filename in files:
@@ -155,6 +156,10 @@ for filename in files:
             else:
                 targetImg = imgCopy
                 targetPx_arr = px_arrCopy
+
+            if isTwice:
+                targetImg = np.concatenate((targetImg, targetImg), 1)
+                targetPx_arr = np.concatenate((targetPx_arr, targetPx_arr), 1)
 
             # output circle dicom file matched center for 3d
             ds.PixelData = targetPx_arr.tobytes()
