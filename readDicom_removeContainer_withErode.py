@@ -9,7 +9,6 @@ from pathlib import Path
 from config import config
 
 shrinkToCenter = 0
-IMAGE_SIZE = 300
 
 
 def get_program_parameters():
@@ -30,13 +29,21 @@ def get_program_parameters():
     parser.add_argument('-outDirname',
                         default='./dcmCutCycleOut',
                         help='The output dicom files are stored here')
+    parser.add_argument('-imgSize',
+                        default=384,
+                        type=int,
+                        help='Set the size of output img')
     parser.add_argument(
         '--isDraw',
         action=argparse.BooleanOptionalAction,
         help='Show images contain circle ,contour and porosity.')
+    parser.add_argument(
+        '--isCrop',
+        action=argparse.BooleanOptionalAction,
+        help='Show images contain circle ,contour and porosity.')
 
     args = parser.parse_args()
-    return args.inDirname, args.outDirname, args.isDraw
+    return args.inDirname, args.outDirname, args.imgSize, args.isDraw, args.isCrop
 
 
 def show_brightness(event, x, y, flags, userdata):
@@ -49,7 +56,7 @@ def show_brightness(event, x, y, flags, userdata):
         print(f"x: {x}, y: {y}, color: {Hu[y,x]}")
 
 
-inDirname, outDirname, isDraw = get_program_parameters()
+inDirname, outDirname, IMAGE_SIZE, isDraw, isCrop = get_program_parameters()
 
 files = os.listdir(inDirname)
 for filename in files:
@@ -135,19 +142,24 @@ for filename in files:
             px_arrCopy[canvas == 0] = 0
             px_arrCopy[imgMaskBin == 0] = 0
 
-            # Crop the roi:
-            x = centerX - int(IMAGE_SIZE / 2)
-            y = centerY - int(IMAGE_SIZE / 2)
-            h = int(2 * IMAGE_SIZE / 2)
-            w = int(2 * IMAGE_SIZE / 2)
+            if isCrop:
+                # Crop the roi:
+                x = centerX - int(IMAGE_SIZE / 2)
+                y = centerY - int(IMAGE_SIZE / 2)
+                h = int(2 * IMAGE_SIZE / 2)
+                w = int(2 * IMAGE_SIZE / 2)
 
-            croppedImg = imgCopy[y:y + h, x:x + w]
-            croppedPx_arr = px_arrCopy[y:y + h, x:x + w]
+                # crop image
+                targetImg = imgCopy[y:y + h, x:x + w]
+                targetPx_arr = px_arrCopy[y:y + h, x:x + w]
+            else:
+                targetImg = imgCopy
+                targetPx_arr = px_arrCopy
 
             # output circle dicom file matched center for 3d
-            ds.PixelData = croppedPx_arr.tobytes()
-            ds.Rows = croppedPx_arr.shape[0]
-            ds.Columns = croppedPx_arr.shape[1]
+            ds.PixelData = targetPx_arr.tobytes()
+            ds.Rows = targetPx_arr.shape[0]
+            ds.Columns = targetPx_arr.shape[1]
             ds.save_as(Path(outDirname, filename))
 
         # show image
@@ -158,7 +170,7 @@ for filename in files:
                           circle[2] - shrinkToCenter, (0, 0, 255), 2)
                 # draw the center of the circle
                 cv.circle(cimg, (circle[0], circle[1]), 2, (0, 0, 255), 3)
-                cv.imshow('Crop img', croppedImg)
+                cv.imshow('Crop img', targetImg)
 
             cv.imshow('detected circles', cimg)
             # cv.imshow('imgMask', imgMask)
