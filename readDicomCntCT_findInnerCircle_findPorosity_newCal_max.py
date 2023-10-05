@@ -142,6 +142,7 @@ for index, filename in enumerate(files):
         circle = circles[0, argmax]
 
         # calculate porosity
+        circleHuList = np.array([])
         for idx, j in np.ndenumerate(Hu):
             # check is inside the circle and coutour?
             # pointPolygonTest -> positive (inside), negative (outside), or zero (on an edge)
@@ -149,19 +150,18 @@ for index, filename in enumerate(files):
                               idx[1], idx[0])
                     and (cv.pointPolygonTest(big_contour,
                                              (idx[1], idx[0]), False) > 0)):
-                if Hu[idx[0], idx[1]] > 0:
-                    constMat = np.array([Hu[idx[0], idx[1]], 0])
-                    uPlus2S = Hu.sum() / Hu.size() + 2 * Hu.std()
-                    coefMat = np.array([[uPlus2S, -1000], [1, 1]])
-                    varMat = np.linalg.inv(coefMat) @ constMat
-                    # get the percent of solid
-                    solidPercent = varMat[0]
-                else:
-                    solidPercent = 0
-                fluidPercentList = np.append(fluidPercentList,
-                                             1 - solidPercent)
+                circleHuList = np.append(circleHuList, Hu[idx[0], idx[1]])
+        for Hu_element in circleHuList:
+            constMat = np.array([Hu_element, 0])
+            uPlus2S = 1095
+            coefMat = np.array([[uPlus2S, -1000], [1, 1]])
+            varMat = np.linalg.inv(coefMat) @ constMat
+            # get the percent of solid
+            solidPercent = varMat[0]
+            fluidPercentList = np.append(fluidPercentList, 1 - solidPercent)
         if fluidPercentList.size != 0:
             porosity = fluidPercentList.sum() / len(fluidPercentList)
+            print(porosity)
             porosityList = np.append(porosityList, porosity)
         else:
             print('fluidPercentList is empty.')
