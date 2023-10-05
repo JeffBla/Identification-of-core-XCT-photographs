@@ -141,6 +141,7 @@ for index, filename in enumerate(files):
 
         # calculate porosity
         numOfVoxel = 0
+        numOfVoxelLowerZero = 0
         circleHuList = np.array([])
         circleVwList = np.array([])
         for idx, j in np.ndenumerate(Hu):
@@ -151,12 +152,16 @@ for index, filename in enumerate(files):
                     and (cv.pointPolygonTest(big_contour,
                                              (idx[1], idx[0]), False) > 0)):
                 numOfVoxel += 1
-                circleHuList = np.append(circleHuList, Hu[idx[0], idx[1]])
+                if Hu[idx[0], idx[1]] < 0:
+                    numOfVoxelLowerZero += 1
+                else:
+                    circleHuList = np.append(circleHuList, Hu[idx[0], idx[1]])
 
         if circleHuList.size != 0:
-            CTG = np.max(circleHuList)
+            CTG = 1095
             circleVwList = (CTG - circleHuList) / CTG
-            porosity = circleVwList.sum() / numOfVoxel
+            porosity = circleVwList.sum() + numOfVoxelLowerZero / numOfVoxel
+            print(porosity)
             porosityList = np.append(porosityList, porosity)
         else:
             print('circleHuList is empty.')
