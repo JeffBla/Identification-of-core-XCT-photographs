@@ -149,25 +149,28 @@ for index, filename in enumerate(files):
                     and (cv.pointPolygonTest(big_contour,
                                              (idx[1], idx[0]), False) > 0)):
                 circleHuList = np.append(circleHuList, Hu[idx[0], idx[1]])
+        if circleHuList.size != 0:
+            # calculate mode (眾數)
+            _, counts_mode = np.unique(circleHuList, return_counts=True)
+            index_mode = np.argmax(counts_mode)
+            # calculate porosity
+            CTG = circleHuList[index_mode]
+            numOfVoxelLowerZero = 0
+            circleHuList_weight = np.array([])
+            for ct in circleHuList:
+                if ct < 0:
+                    numOfVoxelLowerZero += 1
+                elif ct < CTG:
+                    circleHuList_weight = np.append(circleHuList_weight, ct)
 
-        # calculate porosity
-        CTG = 1095
-        numOfVoxelLowerZero = 0
-        circleHuList_weight = np.array([])
-        for ct in circleHuList:
-            if ct < 0:
-                numOfVoxelLowerZero += 1
-            elif ct < CTG:
-                circleHuList_weight = np.append(circleHuList_weight, ct)
-
-        if circleHuList_weight.size != 0:
-            circleVwList = (CTG - circleHuList_weight) / CTG
-            porosity = (circleVwList.sum() +
-                        numOfVoxelLowerZero) / circleHuList.size
-            print(porosity)
-            porosityList = np.append(porosityList, porosity)
-        else:
-            print('circleHuList_weight is empty.')
+            if circleHuList_weight.size != 0:
+                circleVwList = (CTG - circleHuList_weight) / CTG
+                porosity = (circleVwList.sum() +
+                            numOfVoxelLowerZero) / circleHuList.size
+                print(porosity)
+                porosityList = np.append(porosityList, porosity)
+            else:
+                print('circleHuList_weight is empty.')
 
     # matplotlib view
     # fig, axes = plt.subplots(2)
