@@ -139,12 +139,8 @@ for index, filename in enumerate(files):
 
         circle = circles[0, argmax]
 
-        # calculate porosity
-        CTG = 1095
-        numOfVoxel = 0
-        numOfVoxelLowerZero = 0
+        # collect all the CT value in circle
         circleHuList = np.array([])
-        circleVwList = np.array([])
         for idx, j in np.ndenumerate(Hu):
             # check is inside the circle and coutour?
             # pointPolygonTest -> positive (inside), negative (outside), or zero (on an edge)
@@ -152,23 +148,30 @@ for index, filename in enumerate(files):
                               idx[1], idx[0])
                     and (cv.pointPolygonTest(big_contour,
                                              (idx[1], idx[0]), False) > 0)):
-                numOfVoxel += 1
-                if Hu[idx[0], idx[1]] < 0:
-                    numOfVoxelLowerZero += 1
-                elif Hu[idx[0], idx[1]] < CTG:
-                    circleHuList = np.append(circleHuList, Hu[idx[0], idx[1]])
+                circleHuList = np.append(circleHuList, Hu[idx[0], idx[1]])
 
-        if circleHuList.size != 0:
-            circleVwList = (CTG - circleHuList) / CTG
-            porosity = (circleVwList.sum() + numOfVoxelLowerZero) / numOfVoxel
+        # calculate porosity
+        CTG = 1095
+        numOfVoxelLowerZero = 0
+        circleHuList_weight = np.array([])
+        for ct in circleHuList:
+            if ct < 0:
+                numOfVoxelLowerZero += 1
+            elif ct < CTG:
+                circleHuList_weight = np.append(circleHuList_weight, ct)
+
+        if circleHuList_weight.size != 0:
+            circleVwList = (CTG - circleHuList_weight) / CTG
+            porosity = (circleVwList.sum() +
+                        numOfVoxelLowerZero) / circleHuList.size
             print(porosity)
             porosityList = np.append(porosityList, porosity)
         else:
-            print('circleHuList is empty.')
+            print('circleHuList_weight is empty.')
 
     # matplotlib view
     # fig, axes = plt.subplots(2)
-    # counts, bins = np.histogram(circleHuList, 100)
+    # counts, bins = np.histogram(circleHuList_weight, 100)
     # axes[0].hist(bins[:-1], bins, weights=counts)
 
     # counts, bins = np.histogram(circleVwList, 100)
@@ -178,7 +181,7 @@ for index, filename in enumerate(files):
 
     # plotly view
     # fig = make_subplots(2)
-    # fig.append_trace(go.Histogram(x=circleHuList, name='Hu'), row=1, col=1)
+    # fig.append_trace(go.Histogram(x=circleHuList_weight, name='Hu'), row=1, col=1)
 
     # fig.append_trace(go.Histogram(x=circleVwList, name='Vw'), row=2, col=1)
 
