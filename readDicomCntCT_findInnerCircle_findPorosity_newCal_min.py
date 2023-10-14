@@ -4,7 +4,6 @@ import vtkmodules.vtkInteractionStyle
 import vtkmodules.vtkRenderingOpenGL2
 from vtkmodules.vtkIOImage import vtkDICOMImageReader
 
-from pydicom import dcmread
 import cv2 as cv
 import numpy as np
 import pandas as pd
@@ -154,8 +153,7 @@ for index, filename in enumerate(files):
 
         for Hu_element in circleHuList:
             constMat = np.array([Hu_element, 1])
-            uPlus2S = circleHuList.sum(
-            ) / circleHuList.size + 1 * circleHuList.std()
+            uPlus2S = 1095
             coefMat = np.array([[uPlus2S, -1000], [1, 1]])
             varMat = np.linalg.inv(coefMat) @ constMat
             # get the percent of solid
@@ -164,6 +162,7 @@ for index, filename in enumerate(files):
 
         if fluidPercentList.size != 0:
             porosity = fluidPercentList.sum() / len(fluidPercentList)
+            print(porosity)
             porosityList = np.append(porosityList, porosity)
         else:
             print('fluidPercentList is empty.')

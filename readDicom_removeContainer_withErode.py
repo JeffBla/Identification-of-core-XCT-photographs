@@ -25,10 +25,10 @@ def get_program_parameters():
         'The target dir only contain dicom files, and all files in the dir will be read.'
     )
     parser.add_argument('-outDirname',
-                        default='./dcmCutCycleOut',
+                        default='./dcmCutCycleOut_copy',
                         help='The output dicom files are stored here')
     parser.add_argument('-imgSize',
-                        default=384,
+                        default=512,
                         type=int,
                         help='Set the size of output img')
     parser.add_argument(
@@ -88,9 +88,8 @@ for filename in files:
         # print(f"rescaled data type={o8.dtype}")
 
         # do the Hough transform
-        img = o8
+        img = cv.medianBlur(o8, 5)
         cimg = cv.cvtColor(img, cv.COLOR_GRAY2BGR)
-        imgCanny = cv.Canny(img, 30, 150)
 
         # erode
         kernelCircle = cv.getStructuringElement(cv.MORPH_RECT, (5, 5))
@@ -149,7 +148,17 @@ for filename in files:
                 y = centerY - int(IMAGE_SIZE / 2)
                 h = int(2 * IMAGE_SIZE / 2)
                 w = int(2 * IMAGE_SIZE / 2)
-
+                # prevent from out of range
+                if x < 0:
+                    x = 0
+                if y < 0:
+                    y = 0
+                if x + w > imgCopy.shape[1]:
+                    x = imgCopy.shape[1] - w
+                if y + h > imgCopy.shape[0]:
+                    y = imgCopy.shape[0] - h
+                assert x >= 0, "the crop size should be smaller than img size."
+                assert y >= 0, "the crop size should be smaller than img size."
                 # crop image
                 targetImg = imgCopy[y:y + h, x:x + w]
                 targetPx_arr = px_arrCopy[y:y + h, x:x + w]

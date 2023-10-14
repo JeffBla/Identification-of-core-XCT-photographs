@@ -140,6 +140,7 @@ for index, filename in enumerate(files):
         circle = circles[0, argmax]
 
         # calculate porosity
+        CTG = 1095
         numOfVoxel = 0
         numOfVoxelLowerZero = 0
         circleHuList = np.array([])
@@ -154,13 +155,12 @@ for index, filename in enumerate(files):
                 numOfVoxel += 1
                 if Hu[idx[0], idx[1]] < 0:
                     numOfVoxelLowerZero += 1
-                else:
+                elif Hu[idx[0], idx[1]] < CTG:
                     circleHuList = np.append(circleHuList, Hu[idx[0], idx[1]])
 
         if circleHuList.size != 0:
-            CTG = 1095
             circleVwList = (CTG - circleHuList) / CTG
-            porosity = circleVwList.sum() + numOfVoxelLowerZero / numOfVoxel
+            porosity = (circleVwList.sum() + numOfVoxelLowerZero) / numOfVoxel
             print(porosity)
             porosityList = np.append(porosityList, porosity)
         else:
@@ -215,4 +215,9 @@ for index, filename in enumerate(files):
         cv.waitKey(0)
         cv.destroyAllWindows()
 
-print(porosityList.sum() / len(porosityList))
+totalPorotisy = porosityList.sum() / len(porosityList)
+
+df = pd.DataFrame(porosityList)
+df.to_csv('./projectDEMO/outputExcel.csv')
+
+print(totalPorotisy)
