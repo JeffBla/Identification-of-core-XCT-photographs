@@ -1,20 +1,30 @@
-dcmDirHead="bh-3 DICOM-20230421T075124Z-001/bh-3 DICOM/bh_3_"
+dcmDirHead="CTimageWithPorosity/"
 
-dcmDir16_1="16/13170000_dcm"
-dcmDir16_2="16/13170001_dcm"
-dcmDir17_1="17/13240000_dcm"
-dcmDir17_2="17/13240001_dcm"
-dcmDir18_1="18/13300000_dcm"
-dcmDir18_2="18/13300001_dcm"
-dcmDir19_1="19/13360000_dcm"
-dcmDir19_2="19/13360001_dcm"
-dcmDir20_1="20/13420000_dcm"
-dcmDir20_2="20/13420001_dcm"
+dcmDirAT_1_3_1="AT-1_3_1"
+dcmDirAT_1_3_2="AT-1_3_2"
+dcmDirAT_1_3_3="AT-1_3_3"
+dcmDirAT_1_15_1="AT-1_15_1"
+dcmDirAT_1_20_1="AT-1_20_1"
+dcmDirAT_1_20_2="AT-1_20_2"
+dcmDirAT_1_69_1="AT-1_69_1"
+dcmDirAT_1_69_2="AT-1_69_2"
+dcmDirAT_1_76_1="AT-1_76_1"
+dcmDirAT_1_86_1="AT-1_86_1"
+dcmDirAT_1_86_2="AT-1_86_2"
+dcmDirAT_1_92_1="AT-1_92_1"
+dcmDirAT_1_99_1="AT-1_99_1"
+dcmDirBH_3_3_1="BH-3_3_1"
+dcmDirBH_3_3_2="BH-3_3_2"
+dcmDirBH_3_15_1="BH-3_15_1"
+dcmDirBH_3_19_1="BH-3_19_1"
+dcmDirBH_3_19_2="BH-3_19_2"
 
-dcmDirArr_train=($dcmDir16_1 $dcmDir16_2 $dcmDir17_1 $dcmDir17_2
-    $dcmDir18_1 $dcmDir18_2 $dcmDir19_1 $dcmDir19_2)
+dcmDirArr_train=($dcmDirAT_1_3_2 $dcmDirAT_1_3_3 $dcmDirAT_1_15_1 $dcmDirAT_1_20_1
+    $dcmDirAT_1_20_2 $dcmDirAT_1_69_1 $dcmDirAT_1_69_2 $dcmDirAT_1_76_1
+    $dcmDirAT_1_86_1 $dcmDirAT_1_86_2 $dcmDirAT_1_92_1 $dcmDirAT_1_99_1)
 
-dcmDirArr_test=($dcmDir20_1 $dcmDir20_2)
+dcmDirArr_test=($dcmDirAT_1_3_1 $dcmDirBH_3_19_2 $dcmDirBH_3_19_1
+    $dcmDirBH_3_15_1 $dcmDirBH_3_3_2 $dcmDirBH_3_3_1)
 
 # put the result separately
 # target=16
@@ -33,15 +43,17 @@ dcmDirArr_test=($dcmDir20_1 $dcmDir20_2)
 
 # put the result together -> train and test
 for dcmDir in ${dcmDirArr_train[@]}; do
+    mkdir  "./dcmCutCycleOut/train/$dcmDir"
     python readDicom_removeContainer_withErode.py \
         "$dcmDirHead$dcmDir" \
-        -outDirname "./dcmCutCycleOut/train" \
+        -outDirname "./dcmCutCycleOut/train/$dcmDir" \
         --isTwice
 done
 
 for dcmDir in ${dcmDirArr_test[@]}; do
+    mkdir  "./dcmCutCycleOut/test/$dcmDir"
     python readDicom_removeContainer_withErode.py \
         "$dcmDirHead$dcmDir" \
-        -outDirname "./dcmCutCycleOut/test" \
+        -outDirname "./dcmCutCycleOut/test/$dcmDir" \
         --isTwice
 done

@@ -5,9 +5,8 @@ bh-3 DICOM-20230421T075124Z-001
 __pycache__
 projectDEMO/*mp4
 allDcmHere16_20
-node_modules
-package-lock.json
-package.json
+CTimageWithPorosity
+CT image with detected objects.zip
 
 # ignore test folder
 testDcmOut
