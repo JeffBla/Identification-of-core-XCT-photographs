@@ -108,6 +108,9 @@ for filename in files:
                                   param2=95,
                                   minRadius=110,
                                   maxRadius=125)
+        imgCopy = img.copy()
+        px_arrCopy = px_arr.copy()
+
         # Inside circles
         if circles is not None:
             circles = np.uint16(np.around(circles))
@@ -134,47 +137,46 @@ for filename in files:
             cv.circle(canvas, (centerX, centerY), radius, color, thickness)
 
             # Create a copy of the input and mask input:
-            imgCopy = img.copy()
             imgCopy[canvas == 0] = 0
-            imgCopy[imgMaskBin == 0] = 0
 
-            px_arrCopy = px_arr.copy()
             px_arrCopy[canvas == 0] = 0
-            px_arrCopy[imgMaskBin == 0] = 0
+        # mask with erode image
+        px_arrCopy[imgMaskBin == 0] = 0
+        imgCopy[imgMaskBin == 0] = 0
 
-            if isCrop:
-                # Crop the roi:
-                x = centerX - int(IMAGE_SIZE / 2)
-                y = centerY - int(IMAGE_SIZE / 2)
-                h = int(2 * IMAGE_SIZE / 2)
-                w = int(2 * IMAGE_SIZE / 2)
-                # prevent from out of range
-                if x < 0:
-                    x = 0
-                if y < 0:
-                    y = 0
-                if x + w > imgCopy.shape[1]:
-                    x = imgCopy.shape[1] - w
-                if y + h > imgCopy.shape[0]:
-                    y = imgCopy.shape[0] - h
-                assert x >= 0, "the crop size should be smaller than img size."
-                assert y >= 0, "the crop size should be smaller than img size."
-                # crop image
-                targetImg = imgCopy[y:y + h, x:x + w]
-                targetPx_arr = px_arrCopy[y:y + h, x:x + w]
-            else:
-                targetImg = imgCopy
-                targetPx_arr = px_arrCopy
+        if isCrop:
+            # Crop the roi:
+            x = centerX - int(IMAGE_SIZE / 2)
+            y = centerY - int(IMAGE_SIZE / 2)
+            h = int(2 * IMAGE_SIZE / 2)
+            w = int(2 * IMAGE_SIZE / 2)
+            # prevent from out of range
+            if x < 0:
+                x = 0
+            if y < 0:
+                y = 0
+            if x + w > imgCopy.shape[1]:
+                x = imgCopy.shape[1] - w
+            if y + h > imgCopy.shape[0]:
+                y = imgCopy.shape[0] - h
+            assert x >= 0, "the crop size should be smaller than img size."
+            assert y >= 0, "the crop size should be smaller than img size."
+            # crop image
+            targetImg = imgCopy[y:y + h, x:x + w]
+            targetPx_arr = px_arrCopy[y:y + h, x:x + w]
+        else:
+            targetImg = imgCopy
+            targetPx_arr = px_arrCopy
 
-            if isTwice:
-                targetImg = np.concatenate((targetImg, targetImg), 1)
-                targetPx_arr = np.concatenate((targetPx_arr, targetPx_arr), 1)
+        if isTwice:
+            targetImg = np.concatenate((targetImg, targetImg), 1)
+            targetPx_arr = np.concatenate((targetPx_arr, targetPx_arr), 1)
 
-            # output circle dicom file matched center for 3d
-            ds.PixelData = targetPx_arr.tobytes()
-            ds.Rows = targetPx_arr.shape[0]
-            ds.Columns = targetPx_arr.shape[1]
-            ds.save_as(Path(outDirname, filename))
+        # output circle dicom file matched center for 3d
+        ds.PixelData = targetPx_arr.tobytes()
+        ds.Rows = targetPx_arr.shape[0]
+        ds.Columns = targetPx_arr.shape[1]
+        ds.save_as(Path(outDirname, filename))
 
         # show image
         if isDraw:
