@@ -36,13 +36,21 @@ def get_program_parameters():
         help=
         'The target dir only contain dicom files, and all files in the dir will be read.'
     )
+    parser.add_argument("--CTG",
+                        type=float,
+                        default=1096,
+                        help="size of the batches")
     parser.add_argument(
         '--isDraw',
         action=argparse.BooleanOptionalAction,
         help='Show images contain circle ,contour and porosity.')
+    parser.add_argument("--csv_output",
+                        type=str,
+                        default='csv_output.csv',
+                        help="the target of csv file to output")
 
     args = parser.parse_args()
-    return args.inDirname, args.isDraw
+    return args.inDirname, args.CTG, args.isDraw, args.csv_output
 
 
 def checkInCircle(cx, cy, r, idxX, idxY) -> bool:
@@ -62,7 +70,7 @@ def show_brightness(event, x, y, flags, userdata):
         print(f"x: {x}, y: {y}, Hu: {Hu[y,x]}, color: {img[y,x]}")
 
 
-inDirname, isDraw = get_program_parameters()
+inDirname, CTG, isDraw, csv_output_filename = get_program_parameters()
 
 reader = vtkDICOMImageReader()
 reader.SetDirectoryName(inDirname)
@@ -101,7 +109,7 @@ for index, filename in enumerate(files):
     # print(f"rescaled data type={o8.dtype}")
 
     # do the Hough transform
-    img = o8
+    img = cv.medianBlur(o8, 5)
     cimg = cv.cvtColor(img, cv.COLOR_GRAY2BGR)
     imgCanny = cv.Canny(img, 30, 150)
 
@@ -150,11 +158,7 @@ for index, filename in enumerate(files):
                                              (idx[1], idx[0]), False) > 0)):
                 circleHuList = np.append(circleHuList, Hu[idx[0], idx[1]])
         if circleHuList.size != 0:
-            # calculate mode (眾數)
-            _, counts_mode = np.unique(circleHuList, return_counts=True)
-            index_mode = np.argmax(counts_mode)
             # calculate porosity
-            CTG = circleHuList[index_mode]
             numOfVoxelLowerZero = 0
             circleHuList_weight = np.array([])
             for ct in circleHuList:
@@ -170,8 +174,11 @@ for index, filename in enumerate(files):
                 print(porosity)
                 porosityList = np.append(porosityList, porosity)
             else:
+                porosityList = np.append(porosityList, 0)
                 print('circleHuList_weight is empty.')
-
+        else:
+            porosityList = np.append(porosityList, 0)
+            print('circles is empty.')
     # matplotlib view
     # fig, axes = plt.subplots(2)
     # counts, bins = np.histogram(circleHuList_weight, 100)
@@ -224,6 +231,6 @@ for index, filename in enumerate(files):
 totalPorotisy = porosityList.sum() / len(porosityList)
 
 df = pd.DataFrame(porosityList)
-df.to_csv('./projectDEMO/outputExcel.csv')
+df.to_csv(csv_output_filename)
 
 print(totalPorotisy)
