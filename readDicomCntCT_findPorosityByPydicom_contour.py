@@ -48,13 +48,6 @@ def get_program_parameters():
     return args.inDirname, args.CTG, args.isDraw, args.csv_output
 
 
-def checkInCircle(cx, cy, r, idxX, idxY) -> bool:
-    if (idxX - cx)**2 + (idxY - cy)**2 < r**2:
-        return True
-    else:
-        return False
-
-
 def show_brightness(event, x, y, flags, userdata):
     if (event == cv.EVENT_LBUTTONDOWN):
         # test the x,y position in img array
@@ -72,12 +65,6 @@ porosityList = np.array([])
 for idx, filename in enumerate(files):
     with open(Path(inDirname, filename), 'rb') as f:
         ds = dcmread(f)
-        # print("正常的或被压缩的：" + ds.file_meta.TransferSyntaxUID.name)
-        # print(f"Rescale Slope: {ds.RescaleSlope}")
-        # print(f"Rescale Intercept: {ds.RescaleIntercept}")
-        # print("The formula of CT value: Hu = pixel * slope + intercept")
-        # with open('dsInfo.txt', 'w') as tf:
-        #     tf.write(str(ds))
 
         # 提取像素數據
         px_arr = np.array(ds.pixel_array)
@@ -96,19 +83,8 @@ for idx, filename in enumerate(files):
 
         # print(f"rescaled data type={o8.dtype}")
 
-        # do the Hough transform
         img = cv.medianBlur(o8, 5)
         cimg = cv.cvtColor(img, cv.COLOR_GRAY2BGR)
-        imgCanny = cv.Canny(img, 30, 150)
-
-        circles = cv.HoughCircles(imgCanny,
-                                  cv.HOUGH_GRADIENT,
-                                  2,
-                                  20,
-                                  param1=70,
-                                  param2=90,
-                                  minRadius=110,
-                                  maxRadius=130)
 
         # area finding
         # Threshold the image to create a binary image
@@ -125,54 +101,36 @@ for idx, filename in enumerate(files):
                 max = area
                 big_contour = i
 
-        # Inside circles
-        if circles is not None:
-            circles = np.uint16(np.around(circles))
+        # collect all the CT value in contour
+        HuList = np.array([])
+        for idx, j in np.ndenumerate(Hu):
+            # check is inside the coutour?
+            # pointPolygonTest -> positive (inside), negative (outside), or zero (on an edge)
+            if (cv.pointPolygonTest(big_contour, (idx[1], idx[0]), False) > 0):
+                HuList = np.append(HuList, Hu[idx[0], idx[1]])
+        if HuList.size != 0:
+            # calculate porosity
+            numOfVoxelLowerZero = 0
+            circleHuList_weight = np.array([])
+            for ct in HuList:
+                if ct < 0:
+                    numOfVoxelLowerZero += 1
+                elif ct < CTG:
+                    circleHuList_weight = np.append(circleHuList_weight, ct)
 
-            # Sometimes, I will many cycles in a image.
-            # The way I choose is based on the y vale
-            # I choose the topest of the center of circle.
-            argmax = np.argmin(circles[0, :, 1])
-
-            circle = circles[0, argmax]
-
-            # collect all the CT value in circle
-            circleHuList = np.array([])
-            for idx, j in np.ndenumerate(Hu):
-                # check is inside the circle and coutour?
-                # pointPolygonTest -> positive (inside), negative (outside), or zero (on an edge)
-                if (checkInCircle(circle[0], circle[1],
-                                  circle[2] - shrinkToCenter, idx[1], idx[0])
-                        and
-                    (cv.pointPolygonTest(big_contour,
-                                         (idx[1], idx[0]), False) > 0)):
-                    circleHuList = np.append(circleHuList, Hu[idx[0], idx[1]])
-            if circleHuList.size != 0:
-                # calculate porosity
-                numOfVoxelLowerZero = 0
-                circleHuList_weight = np.array([])
-                for ct in circleHuList:
-                    if ct < 0:
-                        numOfVoxelLowerZero += 1
-                    elif ct < CTG:
-                        circleHuList_weight = np.append(
-                            circleHuList_weight, ct)
-
-                if circleHuList_weight.size != 0:
-                    circleVwList = (CTG - circleHuList_weight) / CTG
-                    porosity = (circleVwList.sum() +
-                                numOfVoxelLowerZero) / circleHuList.size
-                    print(porosity)
-                    porosityList = np.append(porosityList, porosity)
-                else:
-                    porosityList = np.append(porosityList, 0)
-                    print('circleHuList_weight is empty.')
+            if circleHuList_weight.size != 0:
+                circleVwList = (CTG - circleHuList_weight) / CTG
+                porosity = (circleVwList.sum() +
+                            numOfVoxelLowerZero) / HuList.size
+                # print(porosity)
+                porosityList = np.append(porosityList, porosity)
             else:
                 porosityList = np.append(porosityList, 0)
-                print('circleHuList is empty.')
+                print('circleHuList_weight is empty.')
         else:
             porosityList = np.append(porosityList, 0)
-            print('circles is empty.')
+            print('HuList is empty.')
+
         # matplotlib view
         # fig, axes = plt.subplots(2)
         # counts, bins = np.histogram(circleHuList, 100)
@@ -193,20 +151,6 @@ for idx, filename in enumerate(files):
 
         # show image
         if isDraw:
-            if circles is not None:
-                # draw the outer circle
-                cv.circle(cimg, (circle[0], circle[1]),
-                          circle[2] - shrinkToCenter, (0, 0, 255), 2)
-                # draw the center of the circle
-                cv.circle(cimg, (circle[0], circle[1]), 2, (0, 0, 255), 3)
-
-                cv.drawContours(cimg, big_contour, -1, (0, 255, 0), 2)
-                cv.putText(cimg, f'{porosity}', (0, 45),
-                           cv.FONT_HERSHEY_SIMPLEX, config['imgTextFontScale'],
-                           config['imgTextColor'], config['imgTextThickness'],
-                           cv.LINE_AA)
-                print(f"{filename}'s porosity: {porosity}")
-
             cv.imshow('detected circles', cimg)
             # cv.imshow('img', thresh)
             # cv.imshow('imgCanny', imgCanny)

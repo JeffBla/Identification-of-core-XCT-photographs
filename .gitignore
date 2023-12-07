@@ -6,6 +6,7 @@ __pycache__
 projectDEMO/*mp4
 allDcmHere16_20
 CTimageWithPorosity
+CTimageWithPorosity_wholeImg
 CT image with detected objects.zip
 
 # ignore test folder
@@ -15,7 +16,5 @@ testDcmOut
 dsInfo.txt
 
 # output folder
-dcmCutCycleOut
-dcmCutCycleOut_copy
-dcmCutCycleOut_copy2
+dcmCutCycleOut*
 outputExcel.csv
