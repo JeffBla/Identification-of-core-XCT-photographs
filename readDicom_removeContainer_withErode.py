@@ -60,6 +60,11 @@ inDirname, outDirname, IMAGE_SIZE, isDraw, isCrop, isTwice = get_program_paramet
 )
 
 files = os.listdir(inDirname)
+# set the study instance UID equally
+with open(Path(inDirname, files[0]), 'rb') as f:
+    ds = dcmread(f)
+    file_SeriesInstanceUID = ds.SeriesInstanceUID
+# start processing
 for filename in files:
     with open(Path(inDirname, filename), 'rb') as f:
         ds = dcmread(f)
@@ -92,7 +97,7 @@ for filename in files:
         cimg = cv.cvtColor(img, cv.COLOR_GRAY2BGR)
 
         # erode
-        kernelCircle = cv.getStructuringElement(cv.MORPH_RECT, (5, 5))
+        kernelCircle = cv.getStructuringElement(cv.MORPH_RECT, (3, 3))
         imgErodeC = cv.erode(img, kernelCircle)
         # mask
         kernelMask = cv.getStructuringElement(cv.MORPH_RECT, (8, 8))
@@ -106,8 +111,8 @@ for filename in files:
                                   40,
                                   param1=70,
                                   param2=95,
-                                  minRadius=110,
-                                  maxRadius=125)
+                                  minRadius=100,
+                                  maxRadius=130)
         imgCopy = img.copy()
         px_arrCopy = px_arr.copy()
 
@@ -173,6 +178,7 @@ for filename in files:
             targetPx_arr = np.concatenate((targetPx_arr, targetPx_arr), 1)
 
         # output circle dicom file matched center for 3d
+        ds.SeriesInstanceUID = file_SeriesInstanceUID
         ds.PixelData = targetPx_arr.tobytes()
         ds.Rows = targetPx_arr.shape[0]
         ds.Columns = targetPx_arr.shape[1]
@@ -180,17 +186,26 @@ for filename in files:
 
         # show image
         if isDraw:
+            #  write original image
+            cv.imwrite(
+                outDirname + filename.split('.')[0] + '_origin' + '.png', cimg)
             if circles is not None:
                 # draw the outer circle
                 cv.circle(cimg, (circle[0], circle[1]),
                           circle[2] - shrinkToCenter, (0, 0, 255), 2)
                 # draw the center of the circle
                 cv.circle(cimg, (circle[0], circle[1]), 2, (0, 0, 255), 3)
-                cv.imshow('Crop img', targetImg)
+                # cv.imshow('Crop img', targetImg)
 
-            cv.imshow('detected circles', cimg)
+            # cv.imshow('detected circles', cimg)
+            cv.imwrite(
+                outDirname + filename.split('.')[0] + '_withCircle' + '.png',
+                cimg)
+            cv.imwrite(
+                outDirname + filename.split('.')[0] + '_afterProcess' + '.png',
+                targetImg)
             # cv.imshow('imgMask', imgMask)
             # cv.imshow('imgMaskBin', imgMaskBin)
             # cv.setMouseCallback('detected circles', show_brightness)
-            cv.waitKey(0)
-            cv.destroyAllWindows()
+            # cv.waitKey(0)
+            # cv.destroyAllWindows()
